@@ -12,7 +12,7 @@ export function rosterSnapshot(raw,profiles,now=Date.now()){
     const joined=Number(m.guildJoinTime),active=Number(m.lastActivityTime);
     return {playerId:m.playerId,name:m.playerName,allyCode:String(p.allyCode),gp:Number(m.galacticPower),joined:joined>0?new Date(joined*1000).toISOString().slice(0,10):null,lastActive:active>0?new Date(active).toISOString():null};
   });
-  return {guildId:profile.id,memberCount:members.length,fetchedAt:now,members,source:{raidStatus:guild.raidStatus??[],territoryWarStatus:guild.territoryWarStatus??[],territoryBattleStatus:guild.territoryBattleStatus??[],memberActivity:guild.member.map(m=>({playerId:m.playerId,memberContribution:m.memberContribution??[],seasonStatus:m.seasonStatus??[]}))}};
+  return {guildId:profile.id,memberCount:members.length,fetchedAt:now,members,source:{recentRaidResult:guild.recentRaidResult??[],recentTerritoryWarResult:guild.recentTerritoryWarResult??[],guildEventTracker:profile.guildEventTracker??[],memberActivity:guild.member.map(m=>({playerId:m.playerId,memberContribution:m.memberContribution??[],seasonStatus:m.seasonStatus??[]}))}};
 }
 async function idToken(){
   const target=new URL(process.env.ACTIONS_ID_TOKEN_REQUEST_URL);target.searchParams.set('audience',origin);
