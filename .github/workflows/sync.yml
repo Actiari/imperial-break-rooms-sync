@@ -2,6 +2,7 @@ name: Guild sync
 on:
   schedule:
     - cron: '7,22,37,52 * * * *'
+    - cron: '37 2 * * 0'
   workflow_dispatch:
   push:
     branches: [main]
@@ -25,7 +26,7 @@ jobs:
         env:
           SYNC_VISIBILITY: ${{ github.event.repository.visibility }}
   heartbeat:
-    if: github.repository == 'Actiari/imperial-break-rooms-sync' && github.event.repository.visibility == 'public' && github.event_name == 'schedule' && github.run_number % 100 == 0
+    if: github.repository == 'Actiari/imperial-break-rooms-sync' && github.event.repository.visibility == 'public' && github.event_name == 'schedule' && github.event.schedule == '37 2 * * 0'
     runs-on: ubuntu-latest
     timeout-minutes: 2
     permissions:
