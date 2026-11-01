@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
-const origin='https://ibr-guild-tracker.imperial-break-rooms.workers.dev';
+const origin='https://imperialbreakrooms.pages.dev';
 const repository='Actiari/imperial-break-rooms-sync';
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 export function rosterSnapshot(raw,profiles,now=Date.now()){
