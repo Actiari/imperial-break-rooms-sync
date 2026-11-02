@@ -3,6 +3,23 @@ import { pathToFileURL } from 'node:url';
 const origin='https://imperialbreakrooms.pages.dev';
 const repository='Actiari/imperial-break-rooms-sync';
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+export async function requestJson(url,init={},options={}){
+  const {attempts=3,fetcher=fetch,wait=sleep,timeoutMs=15000}=options;
+  for(let attempt=0;attempt<attempts;attempt++){
+    let response;
+    try{response=await fetcher(url,{...init,signal:AbortSignal.timeout(timeoutMs)});}catch{
+      if(attempt+1===attempts)throw new Error('Upstream connection failed');
+      await wait(1000*2**attempt);continue;
+    }
+    if(response.ok)return response.json();
+    const transient=response.status===408||response.status===429||response.status>=500;
+    const header=response.headers.get('Retry-After'),retry=header&&/^\d+$/.test(header)?Number(header)*1000:header?Date.parse(header)-Date.now():0;
+    const delay=Math.max(1000*2**attempt,Number.isFinite(retry)?retry:0);
+    if(!transient||attempt+1===attempts||delay>60000)throw new Error('Upstream request failed: HTTP '+response.status);
+    await wait(delay);
+  }
+  throw new Error('Upstream connection failed');
+}
 export function rosterSnapshot(raw,profiles,now=Date.now()){
   const guild=raw.guild??raw,profile=guild.profile;
   if(profile?.id!=='nGnTt-BHQf2sGRMiZ0rT_g'||!Array.isArray(guild.member)||guild.member.length!==Number(profile.memberCount)||guild.member.length<1||guild.member.length>50)throw new Error('Incomplete guild profile');
@@ -16,14 +33,13 @@ export function rosterSnapshot(raw,profiles,now=Date.now()){
 }
 async function idToken(){
   const target=new URL(process.env.ACTIONS_ID_TOKEN_REQUEST_URL);target.searchParams.set('audience',origin);
-  const r=await fetch(target,{headers:{Authorization:'Bearer '+process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN},signal:AbortSignal.timeout(15000)});if(!r.ok)throw new Error('Runner identity unavailable');const data=await r.json();if(typeof data.value!=='string')throw new Error('Runner identity unavailable');return data.value;
+  const data=await requestJson(target,{headers:{Authorization:'Bearer '+process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN}});if(typeof data.value!=='string')throw new Error('Runner identity unavailable');return data.value;
 }
 async function tracker(path,body){
-  const token=await idToken(),r=await fetch(origin+'/api/sync/'+path,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(30000)});
-  if(!r.ok)throw new Error('Tracker rejected sync: HTTP '+r.status);return r.json();
+  const token=await idToken();return requestJson(origin+'/api/sync/'+path,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(body)},{attempts:path==='claim'?1:3,timeoutMs:30000});
 }
 async function comlink(endpoint,payload){
-  const r=await fetch('http://127.0.0.1:3500/'+endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({payload,enums:false}),signal:AbortSignal.timeout(45000)});if(!r.ok)throw new Error('Game data request failed');return r.json();
+  return requestJson('http://127.0.0.1:3500/'+endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({payload,enums:false})},{timeoutMs:45000});
 }
 export async function main(){
   if(process.env.GITHUB_REPOSITORY!==repository||process.env.GITHUB_REF!=='refs/heads/main'||process.env.SYNC_VISIBILITY!=='public')throw new Error('Public repository required');

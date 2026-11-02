@@ -1,6 +1,6 @@
 # Imperial Break Rooms sync runner
 
-Runs Comlink only when a daily refresh or an officer-requested update is due. The schedule checks at 7, 22, 37 and 52 minutes past each hour; GitHub can delay or skip scheduled runs. Daily updates become due 24 hours after the last successful update. Failed pulls leave the last successful data intact and retry after one hour.
+Runs Comlink only when a daily refresh or an officer-requested update is due. The schedule checks at 7, 22, 37 and 52 minutes past each hour; GitHub can delay or skip scheduled runs. Daily updates become due 24 hours after the last successful update. The site can also launch this workflow directly and use a separate Cloudflare timer when its private dispatch credential is configured. Failed pulls retain the last successful data and back off from 5 minutes to 6 hours; the backend enforces the retry time. Transient upstream requests use bounded retries.
 
 This repository contains runner code only. It does not publish guild snapshots, performance exports, officer records, credentials, artifacts or caches. The Worker authenticates short-lived GitHub OIDC tokens for this exact public repository ID, main branch and workflow. No personal access token, Cloudflare API key or Discord secret is available to the runner.
 
