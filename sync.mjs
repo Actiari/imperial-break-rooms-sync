@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 const origin='https://imperialbreakrooms.pages.dev';
 const repository='Actiari/imperial-break-rooms-sync';
+export const guildSyncPaused=true;
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 export async function requestJson(url,init={},options={}){
   const {attempts=3,fetcher=fetch,wait=sleep,timeoutMs=15000}=options;
@@ -42,6 +43,7 @@ async function comlink(endpoint,payload){
   return requestJson('http://127.0.0.1:3500/'+endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({payload,enums:false})},{timeoutMs:45000});
 }
 export async function main(){
+  if(guildSyncPaused){console.log('Guild connection paused pending the new guild. Saved tracker data is retained.');return;}
   if(process.env.GITHUB_REPOSITORY!==repository||process.env.GITHUB_REF!=='refs/heads/main'||process.env.SYNC_VISIBILITY!=='public')throw new Error('Public repository required');
   const work=await tracker('claim',{});if(!work){console.log('No guild update due.');return;}
   let started=false;
