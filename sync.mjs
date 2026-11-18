@@ -3,7 +3,7 @@ import { pathToFileURL } from 'node:url';
 const origin='https://imperialbreakrooms.pages.dev';
 const repository='Actiari/imperial-break-rooms-sync';
 export const gameGuildId='DZhvDqIOQSeL_9n8Bo3o3g';
-export const guildSyncPaused=true;
+export const guildSyncPaused=false;
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 export async function requestJson(url,init={},options={}){
   const {attempts=3,fetcher=fetch,wait=sleep,timeoutMs=15000}=options;
