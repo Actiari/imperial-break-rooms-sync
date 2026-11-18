@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 const origin='https://imperialbreakrooms.pages.dev';
 const repository='Actiari/imperial-break-rooms-sync';
+export const gameGuildId='DZhvDqIOQSeL_9n8Bo3o3g';
 export const guildSyncPaused=true;
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 export async function requestJson(url,init={},options={}){
@@ -23,7 +24,7 @@ export async function requestJson(url,init={},options={}){
 }
 export function rosterSnapshot(raw,profiles,now=Date.now()){
   const guild=raw.guild??raw,profile=guild.profile;
-  if(profile?.id!=='nGnTt-BHQf2sGRMiZ0rT_g'||!Array.isArray(guild.member)||guild.member.length!==Number(profile.memberCount)||guild.member.length<1||guild.member.length>50)throw new Error('Incomplete guild profile');
+  if(profile?.id!==gameGuildId||!Array.isArray(guild.member)||guild.member.length!==Number(profile.memberCount)||guild.member.length<1||guild.member.length>50)throw new Error('Incomplete guild profile');
   const members=guild.member.map(m=>{
     const p=profiles.get(m.playerId)??m;
     if(p.playerId!==m.playerId||!/^\d{9}$/.test(String(p.allyCode)))throw new Error('Player identity unavailable');
@@ -48,6 +49,7 @@ export async function main(){
   const work=await tracker('claim',{});if(!work){console.log('No guild update due.');return;}
   let started=false;
   try{
+    if(work.guildId!==gameGuildId)throw new Error('Tracker guild configuration does not match the new guild');
     const start=spawnSync('docker',['run','-d','--name','swgoh-comlink','--env','APP_NAME=ibr-guild-tracker','-p','127.0.0.1:3500:3000','ghcr.io/swgoh-utils/swgoh-comlink:latest'],{stdio:'pipe',timeout:180000});if(start.status!==0)throw new Error('Comlink startup failed');started=true;
     let ready=false;for(let i=0;i<36;i++){try{const r=await fetch('http://127.0.0.1:3500/enums',{signal:AbortSignal.timeout(3000)});if(r.ok){ready=true;break;}}catch{}await sleep(3000);}if(!ready)throw new Error('Comlink startup timed out');
     const raw=await comlink('guild',{guildId:work.guildId,includeRecentGuildActivityInfo:true}),guild=raw.guild??raw;
